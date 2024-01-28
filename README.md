@@ -12,7 +12,7 @@
     <li>Evaluation:
         <ul>
             <li>Heuristic Evaluation</li>
-            <li>NNUE(ƎUИИ): Efficiently Updatable Neural Networks</li>
+            <li>NNUE (ƎUИИ): Efficiently Updatable Neural Networks</li>
         </ul>
     </li>
     <li>API</li>
