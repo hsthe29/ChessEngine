@@ -1,14 +1,12 @@
 // mod api;
 // mod algorithm;
-
 use std::collections::HashMap;
-
 use shakmaty::{Chess, Position};
-use shakmaty::{Square, Move, Role, Color, Piece};
+use shakmaty::{Square, Move, Role};
 
-fn build_evaluator() -> HashMap<Role, [[i32; 8]; 8]> {
+// use crate::algorithm::minimax_with_alpha_beta;
 
-    let white_position_score: HashMap<Role, [[i32; 8]; 8]> = HashMap::from([
+const white_position_score: HashMap<Role, [[i32; 8]; 8]> = HashMap::from([
     (Role::Pawn, [
         [100, 100, 100, 100, 105, 100, 100, 100],
         [78, 83, 86, 73, 102, 82, 85, 90],
@@ -70,39 +68,11 @@ fn build_evaluator() -> HashMap<Role, [[i32; 8]; 8]> {
         [17, 30, -3, -14, 6, -1, 40, 18]]
     )
 ]);
- return white_position_score;
-}
-
-// fn main() {
-//     println!("Hello, world!");
-    
-//     let pos = Chess::default();
-//     let legals = pos.legal_moves();
-    
-//     // println!("{:?}", legals);
-
-//     let new_pos = pos.to_owned().play(&Move::Normal {
-//         role: Role::Pawn,
-//         from: Square::E2,
-//         to: Square::E4,
-//         capture: None,
-//         promotion: None,
-//     });
-
-//     let turn = pos.turn();
-
-//     println!("{:?}", pos.board().piece_at(Square::A1).unwrap().role == Role::Rook);
-//     println!("{:?}", Square::ALL);
-// }
 
 fn main() {
-    let array = [[1, 2, 3, 4, 5],
-    [11, 12, 13, 14, 15]];
-    println!("Original array: {:?}", array);
-
-    let mut new_array = array.clone();
-    new_array.reverse();
-
-    println!("Reversed array: {:?}", array);
-    println!("Reversed array: {:?}", build_evaluator());
+    println!("Hello, world!");
+    
+    let pos = Chess::default();
+    let legals = pos.legal_moves();
+    
 }

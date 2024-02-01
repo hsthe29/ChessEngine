@@ -1,7 +1,25 @@
 use std::collections::HashMap;
 
 use shakmaty::{Chess, Position};
-use shakmaty::{Square, Move, Role};
+use shakmaty::{Square, Move, Role, Color};
+
+
+const ALPHA: i32 = std::i32::MIN;
+const BETA: i32 = std::i32::MAX;
+
+pub struct Heuristic {
+    piece_value: HashMap<Role, i32>,
+    w_position_table: HashMap<Role, [[i32; 8]; 8]>,
+    b_position_table: HashMap<Role, [[i32; 8]; 8]>
+}
+
+impl Heuristic {
+    pub const fn new() -> Heuristic {
+        Heuristic {
+
+        }
+    }
+}
 
 const PIECE_VALUE: HashMap<Role, i32> = HashMap::from([
     (Role::Pawn, 100),
@@ -12,11 +30,8 @@ const PIECE_VALUE: HashMap<Role, i32> = HashMap::from([
     (Role::King, 60000)
 ]);
 
-const ALPHA: i32 = std::i32::MIN;
-const BETA: i32 = std::i32::MAX;
-
-const white_position_score: HashMap<Char, [[i32; 8]; 8]> = HashMap::from([
-    ('p', [
+const white_position_score: HashMap<Role, [[i32; 8]; 8]> = HashMap::from([
+    (Role::Pawn, [
         [100, 100, 100, 100, 105, 100, 100, 100],
         [78, 83, 86, 73, 102, 82, 85, 90],
         [7, 29, 21, 44, 40, 31, 44, 7],
@@ -26,7 +41,7 @@ const white_position_score: HashMap<Char, [[i32; 8]; 8]> = HashMap::from([
         [-31, 8, -7, -37, -36, -14, 3, -31],
         [0, 0, 0, 0, 0, 0, 0, 0]]
     ),
-    ('n', [
+    (Role::Knight, [
         [-66, -53, -75, -75, -10, -55, -58, -70],
         [-3, -6, 100, -36, 4, 62, -4, -14],
         [10, 67, 1, 74, 73, 27, 62, -2],
@@ -36,7 +51,7 @@ const white_position_score: HashMap<Char, [[i32; 8]; 8]> = HashMap::from([
         [-23, -15, 2, 0, 2, 0, -23, -20],
         [-74, -23, -26, -24, -19, -35, -22, -69]]
     ),
-    ('b', [
+    (Role::Bishop, [
         [-59, -78, -82, -76, -23, -107, -37, -50],
         [-11, 20, 35, -42, -39, 31, 2, -22],
         [-9, 39, -32, 41, 52, -10, 28, -14],
@@ -46,7 +61,7 @@ const white_position_score: HashMap<Char, [[i32; 8]; 8]> = HashMap::from([
         [19, 20, 11, 6, 7, 6, 20, 16],
         [-7, 2, -15, -12, -14, -15, -10, -1]]
     ),
-    ('r', [
+    (Role::Rook, [
         [35, 29, 33, 4, 37, 33, 56, 50],
         [55, 29, 56, 67, 55, 62, 34, 60],
         [19, 35, 28, 33, 45, 27, 25, 15],
@@ -56,7 +71,7 @@ const white_position_score: HashMap<Char, [[i32; 8]; 8]> = HashMap::from([
         [-53, -38, -31, -26, -29, -43, -44, -53],
         [-30, -24, -18, 5, -2, -18, -31, -3]]
     ),
-    ('q', [
+    (Role::Queen, [
         [6, 1, -8, -104, 69, 24, 88, 26],
         [14, 32, 60, -10, 20, 76, 57, 24],
         [-2, 43, 32, 60, 72, 63, 43, 2],
@@ -66,7 +81,7 @@ const white_position_score: HashMap<Char, [[i32; 8]; 8]> = HashMap::from([
         [-36, -18, 0, -19, -15, -15, -21, -38],
         [-39, -30, -31, -13, -31, -36, -34, -4]]
     ),
-    ('k', [
+    (Role::King, [
         [4, 54, 47, -99, -99, 60, 83, -62],
         [-32, 10, 55, 56, 56, 55, 10, 3],
         [-62, 12, -57, 44, -67, 28, 37, -31],
@@ -75,199 +90,36 @@ const white_position_score: HashMap<Char, [[i32; 8]; 8]> = HashMap::from([
         [-47, -42, -43, -79, -64, -32, -29, -32],
         [-4, 3, -14, -50, -57, -18, 13, 4],
         [17, 30, -3, -14, 6, -1, 40, 18]]
-    ),
-
-    // Endgame King Table
-    ('e', [
-        [-50, -40, -30, -20, -20, -30, -40, -50],
-        [-30, -20, -10, 0, 0, -10, -20, -30],
-        [-30, -10, 20, 30, 30, 20, -10, -30],
-        [-30, -10, 30, 40, 40, 30, -10, -30],
-        [-30, -10, 30, 40, 40, 30, -10, -30],
-        [-30, -10, 20, 30, 30, 20, -10, -30],
-        [-30, -30, 0, 0, 0, 0, -30, -30],
-        [-50, -30, -30, -30, -30, -30, -30, -50]]
     )
 ]);
 
-const black_position_score: HashMap<Char, [[i32; 8]; 8]> = HashMap::from(
-    'p' to pst_w['p']!!.copy().reversedArray(),
-    'n' to pst_w['n']!!.copy().reversedArray(),
-    'b' to pst_w['b']!!.copy().reversedArray(),
-    'r' to pst_w['r']!!.copy().reversedArray(),
-    'q' to pst_w['q']!!.copy().reversedArray(),
-    'k' to pst_w['k']!!.copy().reversedArray(),
-    'e' to pst_w['e']!!.copy().reversedArray(),
-)
+const black_position_score: HashMap<Role, [[i32; 8]; 8]> = HashMap::from(
 
-var pstOpponent = hashMapOf('w' to pst_b, 'b' to pst_w)
-var pstYou = hashMapOf('w' to pst_w, 'b' to pst_b)
-var boardScore = 0
+);
 
 /*
  * Evaluates the board at this point in time,
  * using the material weights and piece square tables.
  */
-fn evaluateBoard(engine: ChessEngine, move: Move, prevSum: Int, color: Char): Int {
-    var sum = prevSum
-    if (engine.inCheck) {
-        sum += if (move.color == color) 50
-        else -50
-    }
-    val from = intArrayOf(
-        8 - sqLoc(move.from)[1].digitToInt(),
-        sqLoc(move.from).codePointAt(0) - 'a'.code
-    )
-    val to = intArrayOf(
-        8 - sqLoc(move.to)[1].digitToInt(),
-        sqLoc(move.to).codePointAt(0) - 'a'.code
-    )
-    // Change endgame behavior for kings
-    if (sum < -1500) {
-        if (move.piece == 'k') {
-            move.piece = 'e'
-        }
-        // Kings can never be captured
-         else if (move.captured == 'k') {
-           move.captured = 'e'
-         }
-    }
-    if (move.captured != null) {
-        if (move.color == color) {
-            sum +=
-                WEIGHTS[move.captured!!] +
-                        pstOpponent[move.color]!![move.captured]!![to[0]][to[1]]
-        }
-        else {
-            sum -=
-                WEIGHTS[move.captured!!] +
-                        pstYou[move.color]!![move.captured]!![to[0]][to[1]]
-        }
-    }
-
-    if ((BITS.PROMOTION and move.flags) != 0) {
-        move.promotion = 'q'
-        if (move.color == color) {
-            sum -= WEIGHTS[move.piece] + pstYou[move.color]!![move.piece]!![from[0]][from[1]]
-            sum += WEIGHTS[move.promotion!!] + pstYou[move.color]!![move.promotion]!![to[0]][to[1]]
-        }
-        else {
-            sum += WEIGHTS[move.piece] + pstYou[move.color]!![move.piece]!![from[0]][from[1]]
-            sum -= WEIGHTS[move.promotion!!] + pstYou[move.color]!![move.promotion]!![to[0]][to[1]]
-        }
-    } else {
-        if (move.color != color) {
-            sum += pstYou[move.color]!![move.piece]!![from[0]][from[1]]
-            sum -= pstYou[move.color]!![move.piece]!![to[0]][to[1]]
-        } else {
-            sum -= pstYou[move.color]!![move.piece]!![from[0]][from[1]]
-            sum += pstYou[move.color]!![move.piece]!![to[0]][to[1]]
-        }
-    }
-    return sum
-}
-
-fun evalBoardScore(engine: ChessEngine, move: Move, prevSum: Int, color: Char): Int {
-    var sum = prevSum
-    if (engine.inCheckmate()) {
-        // Opponent is in checkmate (good for us)
-        return if (move.color == color) 100000
-        // Our king's in checkmate (bad for us)
-        else -100000
-    }
-    if (engine.inDraw()) {
-        return 0 }
-    if (engine.inCheck()) {
-        // Opponent is in check (good for us)
-        sum += if (move.color == color) 50
-        // Our king's in check (bad for us)
-        else -50
-    }
-
-    val from = intArrayOf(rank(move.from), file(move.from))
-    val to = intArrayOf(rank(move.to), file(move.to))
-
-    // Change endgame behavior for kings
-    if (sum < -1500) {
-        if (move.piece == 'k') {
-            move.piece = 'e'
-        }
-        // Kings can never be captured
-        else if (move.captured == 'k') {
-            move.captured = 'e'
-        }
-    }
-
-    if (move.captured != null) {
-        // Opponent piece was captured (good for us)
-        if (move.color == color) {
-            sum +=
-                WEIGHTS[move.captured!!] +
-                        pstOpponent[move.color]!![move.captured]!![to[0]][to[1]]
-        }
-        // Our piece was captured (bad for us)
-        else {
-            sum -=
-                WEIGHTS[move.captured!!] +
-                        pstYou[move.color]!![move.captured]!![to[0]][to[1]]
-        }
-    }
-
-    if ((BITS.PROMOTION and move.flags) != 0) {
-        // NOTE: promote to queen for simplicity
-        move.promotion = 'q'
-
-        // Our piece was promoted (good for us)
-        if (move.color == color) {
-            sum -= WEIGHTS[move.piece] + pstYou[move.color]!![move.piece]!![from[0]][from[1]]
-            sum += WEIGHTS[move.promotion!!] + pstYou[move.color]!![move.promotion]!![to[0]][to[1]]
-        }
-        // Opponent piece was promoted (bad for us)
-        else {
-            sum += WEIGHTS[move.piece] + pstYou[move.color]!![move.piece]!![from[0]][from[1]]
-            sum -= WEIGHTS[move.promotion!!] + pstYou[move.color]!![move.promotion]!![to[0]][to[1]]
-        }
-    } else {
-        // The moved piece still exists on the updated board, so we only need to update the position value
-        if (move.color != color) {
-            sum += pstYou[move.color]!![move.piece]!![from[0]][from[1]]
-            sum -= pstYou[move.color]!![move.piece]!![to[0]][to[1]]
-        } else {
-            sum -= pstYou[move.color]!![move.piece]!![from[0]][from[1]]
-            sum += pstYou[move.color]!![move.piece]!![to[0]][to[1]]
-        }
-    }
-    return sum
-}
 
 fn get_position_score(engine: &Chess) -> i32 {
-    var score = 0
-    var i = SQUARES.a8-1
-    while(++i <= SQUARES.h1) {
-        if((i and 0x88) != 0) {
-            i+=7
-            continue
-        }
-        val piece = engine.board[i] ?: continue
-        val row = rank(i)
-        val col = file(i)
-        val temp = pstYou[piece.color]!![piece.type]!![row][col]
-        score += if(piece.color == engine.turn) temp else -temp
+    let mut score = 0;
+    for sq in Square::ALL {
+        score += PIECE_VALUE[sq];
     }
-    return score
+    return sq;
 }
 
 fn get_material_score(state: &Chess) -> i32 {
-    var score = 0
-    var i = SQUARES.a8 -1
-    while(++i <= SQUARES.h1) {
-        if((i and 0x88) != 0) {
-            i+=7
-            continue
-        }
-        val piece = engine.board[i] ?: continue
-        val temp = WEIGHTS[piece.type]
-        score += if(piece.color == engine.turn) temp else -temp
+    let board = state.board();
+    let turn = state.turn();
+    let mut score = 0;
+
+    let position_score_table = if turn == Color::White { white_position_score } else { black_position_score };
+
+    for sq in Square::ALL {
+        let piece = board.piece_at(sq);
+        score += position_score_table[piece.unwrap().role];
     }
     return score
 }
@@ -276,34 +128,22 @@ pub fn evaluate_state(state: &Chess) -> i32 {
     return get_position_score(state) + get_material_score(state);
 }
 
-fun checkStatus(color: String): Boolean {
-    if (engine.inCheckmate()) {
-        println("Checkmate! Oops, $color lost.")
-        EndMessage.type = EndType.NORMAL
-        EndMessage.color = if(color == "WHITE") "BLACK" else "WHITE"
-    } else if (engine.insufficientMaterial()) {
-        println("It's a draw! (Insufficient Material)")
-        EndMessage.type = EndType.DRAW
-        EndMessage.kind = "Insufficient Material"
-    } else if (engine.inThreefoldRepetition()) {
-        println("It's a draw! (Threefold Repetition)")
-        EndMessage.type = EndType.DRAW
-        EndMessage.kind = "Threefold Repetition"
-    } else if (engine.inStalemate()) {
-        println("It's a draw! (Stalemate)")
-        EndMessage.type = EndType.DRAW
-        EndMessage.kind = "Stalemate"
-    } else if (engine.inDraw()) {
-        println("It's a draw! (50-move Rule)")
-        EndMessage.type = EndType.DRAW
-        EndMessage.kind = "50-move Rule"
-    } else if (engine.inCheck()) {
-        println("Oops, $color is in check!")
-        return false
-    } else {
-        println("No check, checkmate, or draw.")
-        return false
+fn checkStatus(state: &Chess) -> bool {
+    if state.is_checkmate() {
+        println!("Checkmate!");
+    } 
+    else if state.is_insufficient_material() {
+        println!("It's a draw! (Insufficient Material)");
     }
-    engine.endGame.set(true)
+    else if state.is_stalemate() {
+        println!("It's a draw! (Stalemate)");
+    } 
+    else if state.outcome() {
+        println!("It's a draw! (50-move Rule)");
+    }
+    else {
+        println("No check, checkmate, or draw.");
+    }
+    engine.endGame.set(true);
     return true
 }
